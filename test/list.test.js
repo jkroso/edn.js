@@ -21,7 +21,7 @@ describe('List', () => {
 
   it('toEDN()', () => {
     equal(EOL.toEDN(), '()')
-    equal(List.from([{toEDN(){return 1}}]).toEDN(), '(1)')
-    equal(List.from([{toEDN(){return 1}}, {toEDN() {return 2}}]).toEDN(), '(1 2)')
+    equal(List.from([1]).toEDN(), '(1)')
+    equal(List.from([1, 2]).toEDN(), '(1 2)')
   })
 })

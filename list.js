@@ -1,3 +1,5 @@
+const write = require('./write')
+
 export class List {
   constructor(head, tail) {
     this.value = head
@@ -15,12 +17,9 @@ export class List {
     return new ListIterator(this)
   }
   toEDN() {
-    var str = '('
-    for (var value of this) {
-      if (str !== '(') str += ' '
-      str += value.toEDN()
-    }
-    return str + ')'
+    var arr = []
+    for (var value of this) arr.push(write(value))
+    return `(${arr.join(' ')})`
   }
 }
 
