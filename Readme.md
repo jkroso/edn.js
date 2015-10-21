@@ -1,6 +1,6 @@
-# edn
+# edn-js
 
-An EDN reader and an EDN writer for JS
+An EDN reader and an EDN writer for JS. It tries to use native JS types when possible but currently JS has no equivalent of EDN's List or UUID; so edn-js provides them.
 
 ## Installation
 
@@ -9,13 +9,10 @@ An EDN reader and an EDN writer for JS
 then in your app:
 
 ```js
-const edn = require('edn-js')
+const {read,write,edn,List,UUID} = require('edn-js')
 ```
 
 ## API
-
-### `edn()`
-
 
 ### `read(str)`
 
@@ -37,4 +34,19 @@ write(new Set([1,2,3])) // => '#{1 2 3}'
 write(new Map([[Symbol('a'), 1]])) // => '{a 1}'
 write({a: 1, b: 2}) // => '#js/Object {"a" 1 "b" 2}'
 write([1,2]) // => '#js/Array [1 2]'
+```
+
+### ``edn`str` ``
+
+This function is designed to be used with ES6's tagged template strings
+
+```js
+edn`(1 2)` // => List.from([1,2])
+```
+
+And if you want to interpolate values it does it without serializing them so identity is preserved
+
+```js
+const object = {}
+edn`(${object})` // => List.from([object])
 ```
