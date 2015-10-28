@@ -17,9 +17,21 @@ export const edn = (strs, ...data) => {
 
 const replace = (data, env) => {
   if (Array.isArray(data)) return data.map(x => replace(x, env))
-  if (data instanceof Map)
-    for (var [key,value] of data)
+  if (data instanceof Map) {
+    var map = data
+    data = new Map
+    for (var [key,value] of map) {
       data.set(replace(key, env), replace(value, env))
+    }
+  }
+  if (data instanceof List) return replaceInList(data, env)
   if (type(data) == 'symbol' && env.has(data)) return env.get(data)
   return data
+}
+
+const replaceInList = (list, env) => {
+  if (list === List.EOL) return list
+  list.value = replace(list.value, env)
+  replaceInList(list.tail, env)
+  return list
 }

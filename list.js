@@ -1,6 +1,6 @@
 const write = require('./write')
 
-export class List {
+export default class List {
   constructor(head, tail) {
     this.value = head
     this.tail = tail || EOL
@@ -35,11 +35,16 @@ class ListIterator {
 }
 
 // the end of list marker
-export const EOL = new List
+const EOL = new List
 Object.defineProperty(EOL, 'value', {
-  get() {throw new Error("Can't get the head of the empty List")}
+  get() {throw new Error("Can't get the head of the empty List")},
+  enumerable: false
 })
 Object.defineProperty(EOL, 'tail', {
-  get() {throw new Error("Can't get the tail of the empty List")}
+  get() {throw new Error("Can't get the tail of the empty List")},
+  enumerable: false
 })
 EOL.done = true
+
+List.EOL = EOL
+List.List = List
