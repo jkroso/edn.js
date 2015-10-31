@@ -11,27 +11,33 @@ export const List = require('./list')
 export const edn = (strs, ...data) => {
   const ids = data.map(() => Symbol.for(':' + new UUID().toString()))
   const edn = strs.reduce((a,b,i) => a + write(ids[i - 1]) + b)
-  const env = new Map(ids.map((id,i) => [id, data[i]]))
-  return replace(read(edn), env)
+  const env = {}
+  ids.forEach((id,i) => env[id] = data[i])
+  return replaceSymbols(read(edn), env)
 }
 
-const replace = (data, env) => {
-  if (Array.isArray(data)) return data.map(x => replace(x, env))
+export const replaceSymbols = (data, env) => {
+  if (Array.isArray(data)) return data.map(x => replaceSymbols(x, env))
   if (data instanceof Map) {
-    var map = data
-    data = new Map
-    for (var [key,value] of map) {
-      data.set(replace(key, env), replace(value, env))
+    var map = new Map
+    for (var [key,value] of data) {
+      map.set(replaceSymbols(key, env), replaceSymbols(value, env))
     }
+    return map
+  }
+  if (data instanceof Set) {
+    var set = new Set
+    data.forEach(val => set.add(replaceSymbols(val, env)))
+    return set
   }
   if (data instanceof List) return replaceInList(data, env)
-  if (type(data) == 'symbol' && env.has(data)) return env.get(data)
+  if (type(data) == 'symbol' && data in env) return env[data]
   return data
 }
 
 const replaceInList = (list, env) => {
   if (list === List.EOL) return list
-  list.value = replace(list.value, env)
+  list.value = replaceSymbols(list.value, env)
   replaceInList(list.tail, env)
   return list
 }
