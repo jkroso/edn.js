@@ -17,6 +17,11 @@ export default class UUID {
     }
   }
   toString() {
+    var buf = Array(32)
+    encodeChunk(this.data, 0, 16, buf,  0)
+    return buf.join('')
+  }
+  toJSON() {
     var buf = Array(36)
     encodeChunk(this.data, 0, 4, buf,  0)
     buf[8] = '-'
@@ -30,7 +35,7 @@ export default class UUID {
     return buf.join('')
   }
   toEDN() {
-    return `#uuid "${this.toString()}"`
+    return `#uuid "${this.toJSON()}"`
   }
 }
 
