@@ -1,4 +1,4 @@
-const {List,EOL} = require('../list')
+const {EOL} = require('../list')
 const assert = require('assert')
 const UUID = require('../uuid')
 const read = require('../read')
@@ -38,7 +38,7 @@ describe('read', () => {
   it('UUIDs', () => {
     const str = 'f81d4fae-7dec-11d0-a765-00a0c91e6bf6'
     assert(read(`#uuid "${str}"`) instanceof UUID)
-    assert(read(`#uuid "${str}"`).toString() == str)
+    assert(read(`#uuid "${str}"`).toJSON() == str)
   })
 
   it('symbols', () => {
