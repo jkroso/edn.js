@@ -5,11 +5,15 @@ export default class UUID {
     else this.randomize()
   }
   parse(str) {
-    parseChunk(str,  0,  8, this.data,  0)
-    parseChunk(str,  9, 13, this.data,  4)
-    parseChunk(str, 14, 18, this.data,  6)
-    parseChunk(str, 19, 23, this.data,  8)
-    parseChunk(str, 24, 36, this.data, 10)
+    if (str.length == 32) {
+      parseChunk(str,  0, 32, this.data,  0)
+    } else {
+      parseChunk(str,  0,  8, this.data,  0)
+      parseChunk(str,  9, 13, this.data,  4)
+      parseChunk(str, 14, 18, this.data,  6)
+      parseChunk(str, 19, 23, this.data,  8)
+      parseChunk(str, 24, 36, this.data, 10)
+    }
   }
   randomize() {
     for (var i = 0; i < 16; i++) {

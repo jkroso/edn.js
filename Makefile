@@ -8,6 +8,5 @@ test: node_modules
 
 node_modules: package.json
 	@npm install
-	@ln -sfn .. $@/edn
 
 .PHONY: serve test
