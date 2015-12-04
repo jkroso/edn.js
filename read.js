@@ -1,5 +1,5 @@
-const {List} = require('./list')
-const UUID = require('./uuid')
+import List from './list'
+import UUID from './uuid'
 
 class Parser {
   constructor(str, filename) {

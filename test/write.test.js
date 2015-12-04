@@ -1,6 +1,6 @@
-const assert = require('assert')
-const UUID = require('../uuid')
-const edn = require('../write')
+import assert from 'assert'
+import UUID from '../uuid'
+import edn from '../write'
 
 describe('write', () => {
   it('numbers', () => {

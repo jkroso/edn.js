@@ -1,9 +1,8 @@
-const type = require('jkroso-type')
-
-export const write = require('./write')
-export const read = require('./read')
-export const UUID = require('./uuid')
-export const List = require('./list')
+import List, {EOL} from './list'
+import type from 'jkroso-type'
+import write from './write'
+import read from './read'
+import UUID from './uuid'
 
 /////
 // Tagged template handler
@@ -36,8 +35,10 @@ export const replaceSymbols = (data, env) => {
 }
 
 const replaceInList = (list, env) => {
-  if (list === List.EOL) return list
+  if (list === EOL) return list
   list.value = replaceSymbols(list.value, env)
   replaceInList(list.tail, env)
   return list
 }
+
+export {write, read, UUID, List, EOL}

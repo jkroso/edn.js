@@ -1,5 +1,5 @@
-const {deepEqual:equal} = require('assert')
-const {List,EOL} = require('../list')
+import {deepEqual as equal} from 'assert'
+import List, {EOL} from '../list'
 
 describe('List', () => {
   it('from(array)', () => {

@@ -1,6 +1,5 @@
-const {read,write,edn} = require('..')
-const {deepEqual} = require('assert')
-const UUID = require('../uuid')
+import {deepEqual} from 'assert'
+import {read,edn} from '..'
 
 it('Tagged template strings', () => {
   deepEqual(edn`[a 2]`, read('[a 2]'))

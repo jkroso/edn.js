@@ -1,5 +1,5 @@
-const {deepEqual,notDeepEqual} = require('assert')
-const UUID = require('../uuid')
+import {deepEqual,notDeepEqual} from 'assert'
+import UUID from '../uuid'
 
 describe('UUID', () => {
   it('new UUID()', () => {

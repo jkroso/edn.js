@@ -1,7 +1,7 @@
-const {EOL} = require('../list')
-const assert = require('assert')
-const UUID = require('../uuid')
-const read = require('../read')
+import {EOL} from '../list'
+import assert from 'assert'
+import UUID from '../uuid'
+import read from '../read'
 
 describe('read', () => {
   it('number', () => {
