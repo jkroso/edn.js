@@ -1,1 +1,4 @@
-module.exports = require('parse-mime').define('application/edn', require('./'))
+import {define} from 'parse-mime'
+import parse from './read'
+
+export default define('application/edn', parse)

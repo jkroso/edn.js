@@ -1,6 +1,6 @@
 {
   "name": "edn-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A reader/writer for EDN in JS",
   "keywords": ["edn"],
   "dependencies": {
