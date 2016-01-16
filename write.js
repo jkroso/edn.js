@@ -1,4 +1,4 @@
-import type from 'jkroso-type'
+import type from '@jkroso/type'
 
 const write = data => {
   switch (type(data)) {

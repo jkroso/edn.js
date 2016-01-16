@@ -1,5 +1,5 @@
+import type from '@jkroso/type'
 import List, {EOL} from './list'
-import type from 'jkroso-type'
 import write from './write'
 import read from './read'
 import UUID from './uuid'

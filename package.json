@@ -1,10 +1,10 @@
 {
   "name": "edn-js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A reader/writer for EDN in JS",
   "keywords": ["edn"],
   "dependencies": {
-    "jkroso-type": "1",
+    "@jkroso/type": "1",
     "parse-mime": "*"
   },
   "devDependencies": {
