@@ -2,6 +2,8 @@
 
 An EDN reader and an EDN writer for JS. It tries to use native JS types when possible but currently JS has no equivalent of EDN's List or UUID; so edn-js provides them.
 
+If you need support for cyclic data check out [this fork](//github.com/jkroso/edn.js/tree/cyclic)
+
 ## Installation
 
 `npm install edn-js`
