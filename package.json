@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "serve": "jkroso/serve",
-    "babel-core": "5",
+    "future-node": "0",
     "hydro-html": "*",
     "hydro-bdd": "*",
     "hydro-dot": "*",
