@@ -1,133 +1,171 @@
-import List from './list'
-import UUID from './uuid'
+import List,{EOL} from 'edn-js/list'
+import UUID from 'edn-js/uuid'
 
-class Parser {
-  constructor(str, filename) {
-    this.filename = filename
-    this.source = str
-    this.index = 0
-  }
+export default (str, filename) => {
+  const input = str.split('\t')
+  const output = new Array(input.length)
+  return parseRef(0, {input, output, filename})
+}
 
-  get current() { return this.source[this.index] }
-  get next() { return this.source[this.index + 1] }
+const parseRef = (ref, state) => {
+  const out = state.output[ref]
+  if (out !== undefined) return out
+  const str = state.input[ref]
+  return state.output[ref] = nextForm(str, 0, state, ref)[1]
+}
 
-  nextForm() {
-    switch (this.current) {
-      case '"': return this.string()
-      case '[': return this.toClosing(']')
-      case '(': return List.from(this.toClosing(')'))
-      case '{': return new Map(pairs(this.toClosing('}')))
-      case ':': return Symbol.for(this.bufferChars())
-      case '#': return this.tagged()
-      case '\\': return this.char()
-      case '}':
-      case ']':
-      case ')': throw this.error(`unexpected closing "${this.source[this.index++]}"`)
-      case undefined: throw new SyntaxError('unexpected end of input')
-      default: return this.primitive(this.bufferChars())
-    }
-  }
-
-  error(msg) {
-    const lines = this.source.split(/\n/g)
-    var count = this.index
-    var lineno = 0
-    while (lines[lineno].length < count) {
-      count -= lines[lineno++].length + 1
-    }
-    return new SyntaxError(`${msg} (${lineno + 1}:${count})`)
-  }
-
-  char() { return this.source[++this.index] }
-
-  toClosing(brace) {
-    this.index++
-    var out = []
-    while (true) {
-      // skip whitespace
-      switch (this.current) {
-        case '\n':
-        case '\r':
-        case '\t':
-        case ',':
-        case ' ': this.index++; continue
-      }
-      if (this.current == brace) break
-      out.push(this.nextForm())
-    }
-    this.index++
-    return out
-  }
-
-  string() {
-    var c
-    var str = []
-    while ((c = this.char()) != '"') {
-      if (c == '\\') switch (c = this.char()) {
-        case 'b': c = '\b'; break
-        case 'f': c = '\f'; break
-        case 'n': c = '\n'; break
-        case 'r': c = '\r'; break
-        case 't': c = '\t'; break
-        case 'v': c = '\v'; break
-        case 'x': throw new Error('TODO: support hex literals')
-      }
-      str.push(c)
-    }
-    this.index++
-    return str.join('')
-  }
-
-  bufferChars() {
-    var buf = this.current
-    while (isChar(this.char())) buf += this.current
-    return buf
-  }
-
-  primitive(str) {
-    if (str == 'true') return true
-    if (str == 'false') return false
-    if (str == 'nil') return null
-    var n = parseFloat(str, 10)
-    if (isNaN(n)) return Symbol.for(str)
-    if (n == str) return n
-    throw this.error('invalid symbol "' + str + '"')
-  }
-
-  tagged() {
-    if (this.char() == '{') return new Set(this.toClosing('}'))
-    const tag = this.bufferChars()
-    const fn = parse[tag]
-    if (!fn) throw this.error('unknown tag type "' + tag + '"')
-    this.index++ // skip space
-    return fn(this.nextForm())
+const nextForm = (str, i, state, ref) => {
+  switch (str[i]) {
+    case '[':  return parseVector(str, i, state, ref)
+    case '(':  return parseList(str, i, state, ref)
+    case '{':  return parseMap(str, i, state, ref)
+    case '#':  return parseTaggedLiteral(str, i, state, ref)
+    case '"':  return parseString(str, i, state)
+    case ':':  return parseSymbol(str, i, state)
+    case '\\': return [i+2, str[i+1]] // char
+    case '}':
+    case ']':
+    case ')': throw error(`unexpected closing "${str[i++]}"`)
+    case undefined: throw new SyntaxError('unexpected end of input')
+    default: return parsePrimitive(str, i, state)
   }
 }
 
-const pairs = arr => {
-  const half = arr.length / 2
-  const out = Array(half)
-  var i = 0
-  var j = 0
-  while (i < half) {
-    out[i++] = [arr[j++], arr[j++]]
+const parseString = (str, i) => {
+  var c, buffer = []
+  while ((c = str[++i]) != '"') {
+    if (c == '\\') switch (c = str[++i]) {
+      case 'b': c = '\b'; break
+      case 'f': c = '\f'; break
+      case 'n': c = '\n'; break
+      case 'r': c = '\r'; break
+      case 't': c = '\t'; break
+      case 'v': c = '\v'; break
+      case 'x': throw new Error('TODO: support hex literals')
+    }
+    if (c === undefined) throw new SyntaxError('unexpected end of input')
+    buffer.push(c)
   }
-  return out
+  return [i + 1, buffer.join('')]
+}
+
+const parseUntil = (brace, str, i, state) => {
+  i += 1 // skip opening brace
+  var form, out = []
+  while (true) {
+    const c = str[i]
+    // skip whitespace
+    switch (c) {
+      case '\n':
+      case '\r':
+      case ',':
+      case ' ': i += 1; continue
+    }
+    if (c == brace) break
+    [i,form] = nextForm(str, i, state)
+    out.push(form)
+  }
+  return [i + 1, out]
+}
+
+const parseVector = (str, i, state, ref) => {
+  const vector = state.output[ref] = []
+  var [i, list] = parseUntil(']', str, i, state)
+  vector.push(...list)
+  return [i, vector]
+}
+
+const parseList = (str, i, state, ref) => {
+  const list = state.output[ref] = new List
+  var [i, values] = parseUntil(')', str, i, state)
+  if (values.length == 0) return [i, (state.output[ref] = EOL)]
+  const donor = List.from(values)
+  list.value = donor.value
+  list.tail = donor.tail
+  return [i, list]
+}
+
+const parseMap = (str, i, state, ref) => {
+  const map = state.output[ref] = new Map
+  var [i, list] = parseUntil('}', str, i, state)
+  for (var j = 0, len = list.length; j < len;) {
+    map.set(list[j++], list[j++])
+  }
+  return [i, map]
+}
+
+const parseSet = (str, i, state, ref) => {
+  const set = state.output[ref] = new Set
+  var [i, list] = parseUntil('}', str, i, state)
+  for (var j = 0, len = list.length; j < len; j++) {
+    set.add(list[j])
+  }
+  return [i, set]
+}
+
+const parseSymbol = (str, i) => {
+  const chars = bufferChars(str, i)
+  return [i + chars.length, Symbol.for(chars)]
+}
+
+const parsePrimitive = (str, i) => {
+  const chars = bufferChars(str, i)
+  if (chars == 'true') return [i + 4, true]
+  if (chars == 'false') return [i + 5, false]
+  if (chars == 'nil') return [i + 3, null]
+  const n = parseFloat(chars, 10)
+  if (isNaN(n)) return [i + chars.length, Symbol.for(chars)]
+  if (n == chars) return [i + chars.length, n]
+  throw error(`invalid symbol "${chars}"`)
+}
+
+const parseTaggedLiteral = (str, i, state, ref) => {
+  if (str[++i] == '{') return parseSet(str, i, state, ref)
+  const tag = bufferChars(str, i)
+  if (tag in taggedLiteralParsers) {
+    const fn = taggedLiteralParsers[tag]
+    return fn(str, i + tag.length + 1, state, ref)
+  }
+  const fn = taggedLiteralHandlers[tag]
+  if (!fn) throw error(`unknown tag type "${tag}"`)
+  var [i, form] = nextForm(str, i + tag.length + 1, state, ref)
+  return [i, fn(form, state, ref)]
+}
+
+const bufferChars = (str, i) => {
+  var buf = ''
+  while (true) {
+    const c = str[i++]
+    if (isChar(c)) buf += c
+    else break
+  }
+  return buf
+}
+
+const error = (msg) => {
+  return new SyntaxError(msg)
 }
 
 const charRegex = /[^\s,}\])]/
 const isChar = c => c != null && charRegex.test(c)
 
-const parse = (str, filename) => new Parser(str, filename).nextForm()
-parse['inst'] = str => new Date(str)
-parse['uuid'] = str => new UUID(str)
-parse['js/Array'] = array => array
-parse['js/Object'] = map => {
-  const object = {}
-  for (var [key,value] of map.entries()) {
-    object[key] = value
-  }
-  return object
+const taggedLiteralParsers = {
+  'js/Object': (str, i, state, ref) => {
+    const object = state.output[ref] = {}
+    var [i, list] = parseUntil('}', str, i, state)
+    for (var j = 0, len = list.length; j < len;) {
+      object[list[j++]] = list[j++]
+    }
+    return [i, object]
+  },
+  'ref': (str, i, state) => {
+    var [i, int] = parsePrimitive(str, i, state)
+    return [i, parseRef(int, state)]
+  },
 }
 
-export default parse
+const taggedLiteralHandlers = {
+  'inst': str => new Date(str),
+  'uuid': str => new UUID(str),
+  'js/Array': array => array,
+}

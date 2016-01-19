@@ -1,5 +1,5 @@
+import UUID from 'edn-js/uuid'
 import assert from 'assert'
-import UUID from '../uuid'
 import edn from '../write'
 
 describe('write', () => {
@@ -34,24 +34,24 @@ describe('write', () => {
 
   it('objects', () => {
     assert(edn({}) == '#js/Object {}')
-    assert(edn({a:1}) == '#js/Object {"a" 1}')
-    assert(edn({a:1,b:2}) == '#js/Object {"a" 1 "b" 2}')
+    assert(edn({a:1}) == '#js/Object {"a" #ref 1}\t1')
+    assert(edn({a:1,b:2}) == '#js/Object {"a" #ref 1 "b" #ref 2}\t1\t2')
   })
 
   it('arrays', () => {
     assert(edn([]) == '#js/Array []')
-    assert(edn([1]) == '#js/Array [1]')
-    assert(edn([1,2]) == '#js/Array [1 2]')
+    assert(edn([1]) == '#js/Array [#ref 1]\t1')
+    assert(edn([1,2]) == '#js/Array [#ref 1 #ref 2]\t1\t2')
   })
 
   it('sets', () => {
     assert(edn(new Set([])) == '#{}')
-    assert(edn(new Set([1,2])) == '#{1 2}')
+    assert(edn(new Set([1,2])) == '#{#ref 1 #ref 2}\t1\t2')
   })
 
   it('maps', () => {
     assert(edn(new Map([])) == '{}')
-    assert(edn(new Map([['a',1]])) == '{"a" 1}')
-    assert(edn(new Map([['a',1],[Symbol('b'),2]])) == '{"a" 1 b 2}')
+    assert(edn(new Map([['a',1]])) == '{#ref 1 #ref 2}\t"a"\t1')
+    assert(edn(new Map([['a',1],[Symbol('b'),2]])) == '{#ref 1 #ref 2 #ref 3 #ref 4}\t"a"\t1\tb\t2')
   })
 })

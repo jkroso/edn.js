@@ -1,29 +1,28 @@
 {
-  "name": "edn-js",
-  "version": "0.0.3",
-  "description": "A reader/writer for EDN in JS",
+  "name": "cyclic-edn",
+  "version": "0.0.0",
+  "description": "A EDN reader/writer which can handle cyclic data",
   "keywords": ["edn"],
   "dependencies": {
     "@jkroso/type": "1",
-    "parse-mime": "*"
+    "parse-mime": "*",
+    "edn-js": "0"
   },
   "devDependencies": {
     "serve": "jkroso/serve",
-    "babel-core": "5",
+    "future-node": "0",
     "hydro-html": "*",
     "hydro-bdd": "*",
     "hydro-dot": "*",
     "hydro": "*"
   },
   "transpile": [["*.js", "!sourcegraph/babel->js"]],
-  "repository": "jkroso/edn.js",
+  "repository": "jkroso/edn.js#cyclic",
   "author": "Jake Rosoman",
   "files": [
     "index.js",
     "read.js",
     "write.js",
-    "uuid.js",
-    "list.js",
     "register.js"
   ],
   "license": "MIT"

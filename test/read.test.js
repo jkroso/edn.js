@@ -1,6 +1,6 @@
-import {EOL} from '../list'
+import {EOL} from 'edn-js/list'
+import UUID from 'edn-js/uuid'
 import assert from 'assert'
-import UUID from '../uuid'
 import read from '../read'
 
 describe('read', () => {
@@ -100,5 +100,20 @@ describe('read', () => {
     assert.deepEqual(read('#js/Array []'), [])
     assert.deepEqual(read('#js/Array ["a"]'), ["a"])
     assert.deepEqual(read('#js/Array ["a" 1]'), ["a", 1])
+  })
+
+  it('circular references', () => {
+    const array = read('#js/Array [#ref 1]\t#js/Object {#ref 2 #ref 0}\t"a"')
+    assert(array[0].a === array)
+    const object = read('#js/Object {#ref 2 #ref 1}\t(#ref 0)\t"a"')
+    assert(object.a.value === object)
+    const list = read('(#ref 1)\t#{#ref 0}')
+    assert(list.value.has(list))
+    const set = read('#{#ref 1}\t[#ref 0]')
+    assert(set.values().next().value[0] === set)
+    const vector = read('[#ref 1]\t{"a" #ref 0}')
+    assert(vector[0].get('a') === vector)
+    const map = read('{"a" #ref 1}\t[#ref 0]')
+    assert(map.get('a')[0] === map)
   })
 })
