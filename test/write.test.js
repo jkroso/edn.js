@@ -54,4 +54,10 @@ describe('write', () => {
     assert(edn(new Map([['a',1]])) == '{"a" 1}')
     assert(edn(new Map([['a',1],[Symbol('b'),2]])) == '{"a" 1 b 2}')
   })
+
+  it('cycles', () => {
+    const m = new Map
+    m.set('self', m)
+    assert(edn(m) == '{"self" # 1}')
+  })
 })
