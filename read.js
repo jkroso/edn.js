@@ -1,4 +1,4 @@
-import List from './list'
+import List, {EOL} from './list'
 import UUID from './uuid'
 
 class Parser {
@@ -6,6 +6,7 @@ class Parser {
     this.filename = filename
     this.source = str
     this.index = 0
+    this.cache = []
   }
 
   get current() { return this.source[this.index] }
@@ -14,9 +15,9 @@ class Parser {
   nextForm() {
     switch (this.current) {
       case '"': return this.string()
-      case '[': return this.toClosing(']')
-      case '(': return List.from(this.toClosing(')'))
-      case '{': return new Map(pairs(this.toClosing('}')))
+      case '[': return this.vector()
+      case '(': return this.list()
+      case '{': return this.map()
       case ':': return Symbol.for(this.bufferChars())
       case '#': return this.tagged()
       case '\\': return this.char()
@@ -24,39 +25,73 @@ class Parser {
       case ']':
       case ')': throw this.error(`unexpected closing "${this.source[this.index++]}"`)
       case undefined: throw new SyntaxError('unexpected end of input')
-      default: return this.primitive(this.bufferChars())
+      default: return this.primitive()
     }
   }
 
-  error(msg) {
-    const lines = this.source.split(/\n/g)
-    var count = this.index
-    var lineno = 0
-    while (lines[lineno].length < count) {
-      count -= lines[lineno++].length + 1
+  vector() {
+    const vec = []
+    this.cache.push(vec)
+    this.index++ // skip opening brace
+    while (true) {
+      this.skipWhitespace()
+      if (this.current == ']') break
+      vec.push(this.nextForm())
     }
-    return new SyntaxError(`${msg} (${lineno + 1}:${count})`)
+    this.index++ // skip closing brace
+    return vec
+  }
+
+  list() {
+    this.index++
+    this.skipWhitespace()
+    if (this.current == ')') return EOL
+    const list = new List
+    this.cache.push(list)
+    var tail = list
+    while (true) {
+      tail.value = this.nextForm()
+      this.skipWhitespace()
+      if (this.current == ')') break
+      tail = tail.tail = new List
+    }
+    this.index++
+    return list
+  }
+
+  map() {
+    const map = new Map
+    this.cache.push(map)
+    this.index++
+    while (true) {
+      this.skipWhitespace()
+      if (this.current == '}') break
+      const key = this.nextForm()
+      this.skipWhitespace()
+      const val = this.nextForm()
+      map.set(key, val)
+    }
+    this.index++
+    return map
+  }
+
+  set() {
+    const set = new Set
+    this.cache.push(set)
+    this.index++
+    while (true) {
+      this.skipWhitespace()
+      if (this.current == '}') break
+      set.add(this.nextForm())
+    }
+    this.index++
+    return set
   }
 
   char() { return this.source[++this.index] }
 
-  toClosing(brace) {
-    this.index++
-    var out = []
-    while (true) {
-      // skip whitespace
-      switch (this.current) {
-        case '\n':
-        case '\r':
-        case '\t':
-        case ',':
-        case ' ': this.index++; continue
-      }
-      if (this.current == brace) break
-      out.push(this.nextForm())
-    }
-    this.index++
-    return out
+  skipWhitespace() {
+    while ('\n\r\t, '.includes(this.current)) this.index++
   }
 
   string() {
@@ -84,7 +119,8 @@ class Parser {
     return buf
   }
 
-  primitive(str) {
+  primitive() {
+    const str = this.bufferChars()
     if (str == 'true') return true
     if (str == 'false') return false
     if (str == 'nil') return null
@@ -95,24 +131,29 @@ class Parser {
   }
 
   tagged() {
-    if (this.char() == '{') return new Set(this.toClosing('}'))
+    const c = this.char()
+    if (c == '{') return this.set()
+    if (c == ' ') return this.reference()
     const tag = this.bufferChars()
     const fn = parse[tag]
     if (!fn) throw this.error('unknown tag type "' + tag + '"')
     this.index++ // skip space
     return fn(this.nextForm())
   }
-}
 
-const pairs = arr => {
-  const half = arr.length / 2
-  const out = Array(half)
-  var i = 0
-  var j = 0
-  while (i < half) {
-    out[i++] = [arr[j++], arr[j++]]
+  reference() {
+    return this.cache[this.primitive() - 1]
   }
-  return out
+
+  error(msg) {
+    const lines = this.source.split(/\n/g)
+    var count = this.index
+    var lineno = 0
+    while (lines[lineno].length < count) {
+      count -= lines[lineno++].length + 1
+    }
+    return new SyntaxError(`${msg} (${lineno + 1}:${count})`)
+  }
 }
 
 const charRegex = /[^\s,}\])]/

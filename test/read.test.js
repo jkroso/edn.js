@@ -101,4 +101,14 @@ describe('read', () => {
     assert.deepEqual(read('#js/Array ["a"]'), ["a"])
     assert.deepEqual(read('#js/Array ["a" 1]'), ["a", 1])
   })
+
+  it('references', () => {
+    const a = read('{self # 1}')
+    assert(a.get(Symbol.for('self')) == a)
+    const b = read('[{vec # 1} {map # 2} (# 3 # 2)]')
+    assert(b[0] == b[1].get(Symbol.for('map')))
+    assert(b[0].get(Symbol.for('vec')) == b)
+    assert(b[2].value == b[1])
+    assert(b[2].tail.value == b[0])
+  })
 })
