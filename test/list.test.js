@@ -11,12 +11,7 @@ describe('List', () => {
   })
 
   it('iterator protocol', () => {
-    const list = List.from([1,2,3])
-    var loops = 0
-    for (var value of list) {
-      equal(value, ++loops)
-    }
-    equal(loops, 3)
+    equal([1,2,3], Array.from(List.from([1,2,3])))
   })
 
   it('toEDN()', () => {

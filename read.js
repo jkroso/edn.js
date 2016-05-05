@@ -115,7 +115,7 @@ class Parser {
 
   bufferWhile(regex) {
     var buf = this.current
-    while (regex.test(this.char())) buf += this.current
+    while (ismatch(regex, this.char())) buf += this.current
     return buf
   }
 
@@ -158,6 +158,7 @@ class Parser {
 
 const charRegex = /[^\s,}\])]/
 const tagRegex = /[^\s]/
+const ismatch = (r, c) => c != null && r.test(c)
 
 const parse = (str, filename) => new Parser(str, filename).nextForm()
 parse['inst'] = str => new Date(str)
