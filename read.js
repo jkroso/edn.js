@@ -18,7 +18,7 @@ class Parser {
       case '[': return this.vector()
       case '(': return this.list()
       case '{': return this.map()
-      case ':': return Symbol.for(this.bufferChars())
+      case ':': return Symbol.for(this.bufferWhile(charRegex))
       case '#': return this.tagged()
       case '\\': return this.char()
       case '}':
@@ -113,14 +113,14 @@ class Parser {
     return str.join('')
   }
 
-  bufferChars() {
+  bufferWhile(regex) {
     var buf = this.current
-    while (isChar(this.char())) buf += this.current
+    while (regex.test(this.char())) buf += this.current
     return buf
   }
 
   primitive() {
-    const str = this.bufferChars()
+    const str = this.bufferWhile(charRegex)
     if (str == 'true') return true
     if (str == 'false') return false
     if (str == 'nil') return null
@@ -134,7 +134,7 @@ class Parser {
     const c = this.char()
     if (c == '{') return this.set()
     if (c == ' ') return this.reference()
-    const tag = this.bufferChars()
+    const tag = this.bufferWhile(tagRegex)
     const fn = parse[tag]
     if (!fn) throw this.error('unknown tag type "' + tag + '"')
     this.index++ // skip space
@@ -157,7 +157,7 @@ class Parser {
 }
 
 const charRegex = /[^\s,}\])]/
-const isChar = c => c != null && charRegex.test(c)
+const tagRegex = /[^\s]/
 
 const parse = (str, filename) => new Parser(str, filename).nextForm()
 parse['inst'] = str => new Date(str)
