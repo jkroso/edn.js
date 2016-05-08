@@ -1,7 +1,7 @@
 import {EOL} from '../list'
 import assert from 'assert'
 import UUID from '../uuid'
-import read from '../read'
+import read, {tags,types} from '../read'
 
 describe('read', () => {
   it('number', () => {
@@ -65,15 +65,10 @@ describe('read', () => {
   })
 
   it('list', () => {
-    const collect = list => {
-      const arr = []
-      for (var value of list) arr.push(value)
-      return arr
-    }
     assert.deepEqual(read('()'), EOL)
-    assert.deepEqual(collect(read('(1)')), [1])
-    assert.deepEqual(collect(read('("a" 1)')), ["a",1])
-    assert.deepEqual(collect(read('(1 2 3)')), [1,2,3])
+    assert.deepEqual(Array.from(read('(1)')), [1])
+    assert.deepEqual(Array.from(read('("a" 1)')), ["a",1])
+    assert.deepEqual(Array.from(read('(1 2 3)')), [1,2,3])
   })
 
   it('set', () => {
@@ -110,5 +105,20 @@ describe('read', () => {
     assert(b[0].get(Symbol.for('vec')) == b)
     assert(b[2].value == b[1])
     assert(b[2].tail.value == b[0])
+  })
+
+  it('custom tags', () => {
+    tags['whatever'] = x => x
+    const x = read('#whatever [{self # 1}]')
+    assert(x[0].get(Symbol.for('self')) == x[0])
+  })
+
+  // NB: can't support types which have been defined with class
+  // because they don't support staged construction and in turn this
+  // makes cycles impossible to parse
+  it('custom types', () => {
+    types['A'] = function A(a){ this.a = a }
+    const x = read('#A (# 1)')
+    assert(x.a == x)
   })
 })

@@ -12,14 +12,14 @@ class Parser {
   get current() { return this.source[this.index] }
   get next() { return this.source[this.index + 1] }
 
-  nextForm() {
+  nextForm(nocache) {
     switch (this.current) {
       case '"': return this.string()
-      case '[': return this.vector()
-      case '(': return this.list()
-      case '{': return this.map()
+      case '[': return this.vector(nocache)
+      case '(': return this.list(nocache)
+      case '{': return this.map(nocache)
       case ':': return Symbol.for(this.bufferWhile(charRegex))
-      case '#': return this.tagged()
+      case '#': return this.tagged(nocache)
       case '\\': return this.char()
       case '}':
       case ']':
@@ -29,9 +29,9 @@ class Parser {
     }
   }
 
-  vector() {
+  vector(nocache) {
     const vec = []
-    this.cache.push(vec)
+    nocache || this.cache.push(vec)
     this.index++ // skip opening brace
     while (true) {
       this.skipWhitespace()
@@ -42,12 +42,12 @@ class Parser {
     return vec
   }
 
-  list() {
+  list(nocache) {
     this.index++
     this.skipWhitespace()
     if (this.current == ')') return EOL
     const list = new List
-    this.cache.push(list)
+    nocache || this.cache.push(list)
     var tail = list
     while (true) {
       tail.value = this.nextForm()
@@ -59,9 +59,9 @@ class Parser {
     return list
   }
 
-  map() {
+  map(nocache) {
     const map = new Map
-    this.cache.push(map)
+    nocache || this.cache.push(map)
     this.index++
     while (true) {
       this.skipWhitespace()
@@ -75,9 +75,9 @@ class Parser {
     return map
   }
 
-  set() {
+  set(nocache) {
     const set = new Set
-    this.cache.push(set)
+    nocache || this.cache.push(set)
     this.index++
     while (true) {
       this.skipWhitespace()
@@ -130,15 +130,21 @@ class Parser {
     throw this.error('invalid symbol "' + str + '"')
   }
 
-  tagged() {
+  tagged(nocache) {
     const c = this.char()
-    if (c == '{') return this.set()
+    if (c == '{') return this.set(nocache)
     if (c == ' ') return this.reference()
     const tag = this.bufferWhile(tagRegex)
-    const fn = parse[tag]
-    if (!fn) throw this.error('unknown tag type "' + tag + '"')
     this.index++ // skip space
-    return fn(this.nextForm())
+    if (tag in tags) return tags[tag](this.nextForm(true))
+    if (tag in types) {
+      const T = types[tag]
+      const t = Object.create(T.prototype)
+      this.cache.push(t)
+      T.apply(t, Array.from(this.nextForm(true)))
+      return t
+    }
+    throw this.error('unknown tag type "' + tag + '"')
   }
 
   reference() {
@@ -161,15 +167,20 @@ const tagRegex = /[^\s]/
 const ismatch = (r, c) => c != null && r.test(c)
 
 const parse = (str, filename) => new Parser(str, filename).nextForm()
-parse['inst'] = str => new Date(str)
-parse['uuid'] = str => new UUID(str)
-parse['js/Array'] = array => array
-parse['js/Object'] = map => {
-  const object = {}
-  for (var [key,value] of map.entries()) {
-    object[key] = value
+
+export const tags = {
+  'inst': str => new Date(str),
+  'uuid': str => new UUID(str),
+  'js/Array': array => array,
+  'js/Object': map => {
+    const object = {}
+    for (var [key,value] of map.entries()) {
+      object[key] = value
+    }
+    return object
   }
-  return object
 }
+
+export const types = {}
 
 export default parse
