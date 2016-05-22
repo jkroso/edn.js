@@ -1,10 +1,10 @@
 {
   "name": "edn-js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A reader/writer for EDN in JS",
   "keywords": ["edn"],
   "dependencies": {
-    "@jkroso/type": "1",
+    "@jkroso/type": "2",
     "parse-mime": "*"
   },
   "devDependencies": {
@@ -15,7 +15,7 @@
     "hydro-dot": "*",
     "hydro": "*"
   },
-  "transpile": [["*.js", "!sourcegraph/babel->js"]],
+  "transpile": [["*.js", "!sourcegraph/babel->js", {"stage": 2}]],
   "repository": "jkroso/edn.js",
   "author": "Jake Rosoman",
   "files": [
